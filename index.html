@@ -3,13 +3,146 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Space Shooter Game</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Higher Jump Obstacle Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f0f0f0;
+      margin: 0;
+      padding: 0;
+    }
+    #game {
+      position: relative;
+      width: 600px;
+      height: 300px;
+      margin: 50px auto;
+      background-color: #fff;
+      border: 2px solid #000;
+      overflow: hidden;
+    }
+    #player {
+      position: absolute;
+      bottom: 0;
+      left: 50px;
+      width: 40px;
+      height: 40px;
+      background-color: blue;
+    }
+    .obstacle {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 40px;
+      height: 40px;
+      background-color: red;
+    }
+    #score {
+      font-size: 24px;
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
-  <div id="game-area">
-    <div id="spaceship"></div>
+  <h1>Higher Jump Obstacle Game</h1>
+  <p>Press SPACE to jump over the obstacles!</p>
+  <div id="game">
+    <div id="player"></div>
   </div>
-  <script src="script.js"></script>
+  <div id="score">Score: 0</div>
+
+  <script>
+    const game = document.getElementById("game");
+    const player = document.getElementById("player");
+    const scoreDisplay = document.getElementById("score");
+    let score = 0;
+    let speed = 5;
+    let isJumping = false;
+    let gameInterval;
+    let spawnRate = 2000; // Initial spawn rate for obstacles
+
+    // Jump function
+    function jump() {
+      if (isJumping) return;
+      isJumping = true;
+      let jumpHeight = 0;
+      const jumpInterval = setInterval(() => {
+        if (jumpHeight >= 150) { // Increased jump height (from 100 to 150)
+          clearInterval(jumpInterval);
+          const fallInterval = setInterval(() => {
+            if (jumpHeight <= 0) {
+              clearInterval(fallInterval);
+              isJumping = false;
+            }
+            jumpHeight -= 5;
+            player.style.bottom = jumpHeight + "px";
+          }, 20);
+        }
+        jumpHeight += 5;
+        player.style.bottom = jumpHeight + "px";
+      }, 20);
+    }
+
+    // Create obstacles
+    function createObstacle() {
+      const obstacle = document.createElement("div");
+      obstacle.classList.add("obstacle");
+
+      // Randomize obstacle height (between 40px and 100px)
+      const obstacleHeight = Math.floor(Math.random() * 60) + 40;
+      obstacle.style.height = obstacleHeight + "px";
+      obstacle.style.bottom = "0";
+
+      game.appendChild(obstacle);
+
+      let obstaclePosition = 0;
+      obstacle.style.right = obstaclePosition + "px";
+
+      const obstacleInterval = setInterval(() => {
+        if (obstaclePosition > 600) {
+          clearInterval(obstacleInterval);
+          game.removeChild(obstacle);
+          score++;
+          scoreDisplay.textContent = "Score: " + score;
+
+          // Increase speed and difficulty
+          speed += 1; // Increase speed more aggressively
+          spawnRate = Math.max(500, spawnRate - 100); // Reduce spawn rate (but not below 500ms)
+        }
+
+        // Check for collision
+        const playerRect = player.getBoundingClientRect();
+        const obstacleRect = obstacle.getBoundingClientRect();
+        if (
+          playerRect.left < obstacleRect.right &&
+          playerRect.right > obstacleRect.left &&
+          playerRect.bottom > obstacleRect.top
+        ) {
+          clearInterval(obstacleInterval);
+          clearInterval(gameInterval);
+          alert("Game Over! Your score: " + score);
+          window.location.reload();
+        }
+
+        obstaclePosition += speed;
+        obstacle.style.right = obstaclePosition + "px";
+      }, 20);
+    }
+
+    // Start the game
+    function startGame() {
+      gameInterval = setInterval(createObstacle, spawnRate); // Create obstacles dynamically
+    }
+
+    // Listen for spacebar to jump
+    document.addEventListener("keydown", (event) => {
+      if (event.code === "Space") {
+        jump();
+      }
+    });
+
+    // Start the game when the page loads
+    startGame();
+  </script>
 </body>
 </html>
